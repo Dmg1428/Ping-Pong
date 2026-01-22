@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo Ping-Pong</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body> 
+    <canvas></canvas>
+
+    <script>
+        const canvasEl = document.querySelector("canvas"),
+              canvasCTX = canvasEl.getContext("2d"),
+              gapX = 10;
+
+        // Campo do jogo
+        const field = {
+            w: window.innerWidth,
+            h: window.innerHeight,
+            draw: function () {
+                canvasCTX.fillStyle = "#286047";
+                canvasCTX.fillRect(0, 0, this.w, this.h);
+            }
+        };
+
+        // Linha central
+        const line = {
+            w: 15,
+            h: field.h,
+            draw: function () {
+                canvasCTX.fillStyle = "#ffffff";
+                const x = field.w / 2 - this.w / 2;
+                canvasCTX.fillRect(x, 0, this.w, this.h);
+            }
+        };
+
+        const leftPaddle = {
+            x: gapX,
+            y: 0,
+            w: line.w,
+            h: 200,
+            draw: function(){
+                canvasCTX.fillStyle = "#ffffff";
+                canvasCTX.fillRect(this.x, this.y, this.w, this.h);
+            }
+        };
+
+        const rightPaddle = {
+            x: field.w - line.w - gapX,
+            y: 0,
+            w: line.w,
+            h: 200,
+            draw: function(){
+                canvasCTX.fillStyle = "#ffffff";
+                canvasCTX.fillRect(this.x, this.y, this.w, this.h);
+            }
+        };
+
+        const ball = {
+            x: 300,
+            y: 200,
+            r: 20,
+            draw: function(){
+                canvasCTX.fillStyle = "#ffffff";
+                canvasCTX.beginPath();
+                canvasCTX.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
+                canvasCTX.fill();
+            }
+        };
+
+        const score = { 
+            human: 1,
+            computer: 2,
+            draw: function(){ 
+                canvasCTX.font = "bold 72px Arial";
+                canvasCTX.textAlign = "center";
+                canvasCTX.textBaseline = "top";
+                canvasCTX.fillStyle = "#01341D";
+                canvasCTX.fillText(this.human, field.w / 4, 50);
+                canvasCTX.fillText(this.computer, field.w * 3 / 4, 50);
+            }
+        };
+
+        function setup() {
+            canvasEl.width  = field.w;
+            canvasEl.height = field.h;
+        }
+
+        function draw() {
+            field.draw();
+            line.draw();
+            leftPaddle.draw();
+            rightPaddle.draw();
+            score.draw();
+            ball.draw();
+        }
+
+        setup();
+        draw();
+    </script>
+</body>
+</html>
