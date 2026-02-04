@@ -1,112 +1,237 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jogo Ping-Pong</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jogo Ping-Pong</title>
 
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-    </style>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+</style>
 </head>
 
 <body> 
-    <canvas></canvas>
+<canvas></canvas>
 
-    <script>
-        const canvasEl = document.querySelector("canvas"),
-              canvasCTX = canvasEl.getContext("2d"),
-              gapX = 10;
+<script>
+const canvasEl = document.querySelector("canvas"),
+      canvasCTX = canvasEl.getContext("2d"),
+      gapX = 10;
 
-        // Campo do jogo
-        const field = {
-            w: window.innerWidth,
-            h: window.innerHeight,
-            draw: function () {
-                canvasCTX.fillStyle = "#286047";
-                canvasCTX.fillRect(0, 0, this.w, this.h);
-            }
-        };
+// ======== CONTROLE TECLADO ========
+const keys = {
+    w: false,
+    s: false
+};
 
-        // Linha central
-        const line = {
-            w: 15,
-            h: field.h,
-            draw: function () {
-                canvasCTX.fillStyle = "#ffffff";
-                const x = field.w / 2 - this.w / 2;
-                canvasCTX.fillRect(x, 0, this.w, this.h);
-            }
-        };
+window.addEventListener("keydown", (e) => {
+    if(e.key === "w" || e.key === "W") keys.w = true;
+    if(e.key === "s" || e.key === "S") keys.s = true;
+});
 
-        const leftPaddle = {
-            x: gapX,
-            y: 0,
-            w: line.w,
-            h: 200,
-            draw: function(){
-                canvasCTX.fillStyle = "#ffffff";
-                canvasCTX.fillRect(this.x, this.y, this.w, this.h);
-            }
-        };
+window.addEventListener("keyup", (e) => {
+    if(e.key === "w" || e.key === "W") keys.w = false;
+    if(e.key === "s" || e.key === "S") keys.s = false;
+});
 
-        const rightPaddle = {
-            x: field.w - line.w - gapX,
-            y: 0,
-            w: line.w,
-            h: 200,
-            draw: function(){
-                canvasCTX.fillStyle = "#ffffff";
-                canvasCTX.fillRect(this.x, this.y, this.w, this.h);
-            }
-        };
+// ================= CAMPO =================
+const field = {
+    w: window.innerWidth,
+    h: window.innerHeight,
 
-        const ball = {
-            x: 300,
-            y: 200,
-            r: 20,
-            draw: function(){
-                canvasCTX.fillStyle = "#ffffff";
-                canvasCTX.beginPath();
-                canvasCTX.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
-                canvasCTX.fill();
-            }
-        };
+    draw: function () {
+        canvasCTX.fillStyle = "#286047";
+        canvasCTX.fillRect(0, 0, this.w, this.h);
+    }
+};
 
-        const score = { 
-            human: 1,
-            computer: 2,
-            draw: function(){ 
-                canvasCTX.font = "bold 72px Arial";
-                canvasCTX.textAlign = "center";
-                canvasCTX.textBaseline = "top";
-                canvasCTX.fillStyle = "#01341D";
-                canvasCTX.fillText(this.human, field.w / 4, 50);
-                canvasCTX.fillText(this.computer, field.w * 3 / 4, 50);
-            }
-        };
+// ================= LINHA CENTRAL =================
+const line = {
+    w: 15,
+    h: field.h,
 
-        function setup() {
-            canvasEl.width  = field.w;
-            canvasEl.height = field.h;
+    draw: function () {
+        canvasCTX.fillStyle = "#ffffff";
+        const x = field.w / 2 - this.w / 2;
+        canvasCTX.fillRect(x, 0, this.w, this.h);
+    }
+};
+
+// ================= RAQUETE ESQUERDA (JOGADOR) =================
+const leftPaddle = {
+    x: gapX,
+    y: 100,
+    w: 15,
+    h: 200,
+    speed: 8,
+
+    _move: function(){
+        if(keys.w) this.y -= this.speed;
+        if(keys.s) this.y += this.speed;
+
+        // Limites
+        if(this.y < 0) this.y = 0;
+        if(this.y + this.h > field.h)
+            this.y = field.h - this.h;
+    },
+
+    draw: function(){
+        canvasCTX.fillStyle = "#ffffff";
+        canvasCTX.fillRect(this.x, this.y, this.w, this.h);
+    }
+};
+
+// ================= RAQUETE DIREITA (COMPUTADOR) =================
+const rightPaddle = {
+    x: field.w - 15 - gapX,
+    y: 100,
+    w: 15,
+    h: 200,
+    speed: 5,
+
+    _autoMove: function(){
+        const center = this.y + this.h / 2;
+
+        if(center < ball.y - 10){
+            this.y += this.speed;
+        } else if(center > ball.y + 10){
+            this.y -= this.speed;
+        }
+    },
+
+    draw: function(){
+        canvasCTX.fillStyle = "#ffffff";
+        canvasCTX.fillRect(this.x, this.y, this.w, this.h);
+    }
+};
+
+// ================= BOLA =================
+const ball = {
+    x: field.w / 2,
+    y: field.h / 2,
+    r: 15,
+    speedX: 6,
+    speedY: 6,
+
+    _move: function(){
+        this.x += this.speedX;
+        this.y += this.speedY;
+    },
+
+    _checkWallCollision: function(){
+        if(this.y - this.r < 0 || this.y + this.r > field.h){
+            this.speedY *= -1;
+        }
+    },
+
+    _checkPaddleCollision: function(){
+
+        // esquerda
+        if(
+            this.x - this.r < leftPaddle.x + leftPaddle.w &&
+            this.y > leftPaddle.y &&
+            this.y < leftPaddle.y + leftPaddle.h
+        ){
+            this.speedX *= -1;
+            this.x = leftPaddle.x + leftPaddle.w + this.r;
         }
 
-        function draw() {
-            field.draw();
-            line.draw();
-            leftPaddle.draw();
-            rightPaddle.draw();
-            score.draw();
-            ball.draw();
+        // direita
+        if(
+            this.x + this.r > rightPaddle.x &&
+            this.y > rightPaddle.y &&
+            this.y < rightPaddle.y + rightPaddle.h
+        ){
+            this.speedX *= -1;
+            this.x = rightPaddle.x - this.r;
+        }
+    },
+
+    _checkScore: function(){
+        if(this.x - this.r < 0){
+            score.computer++;
+            this._reset();
         }
 
-        setup();
-        draw();
-    </script>
+        if(this.x + this.r > field.w){
+            score.human++;
+            this._reset();
+        }
+    },
+
+    _reset: function(){
+        this.x = field.w / 2;
+        this.y = field.h / 2;
+
+        this.speedX *= -1;
+        this.speedY = 6 * (Math.random() > 0.5 ? 1 : -1);
+    },
+
+    draw: function(){
+        canvasCTX.fillStyle = "#ffffff";
+        canvasCTX.beginPath();
+        canvasCTX.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
+        canvasCTX.fill();
+    }
+};
+
+// ================= PLACAR =================
+const score = { 
+    human: 0,
+    computer: 0,
+
+    draw: function(){ 
+        canvasCTX.font = "bold 72px Arial";
+        canvasCTX.textAlign = "center";
+        canvasCTX.textBaseline = "top";
+        canvasCTX.fillStyle = "#01341D";
+
+        canvasCTX.fillText(this.human, field.w / 4, 50);
+        canvasCTX.fillText(this.computer, field.w * 3 / 4, 50);
+    }
+};
+
+// ================= SETUP =================
+function setup() {
+    canvasEl.width  = field.w;
+    canvasEl.height = field.h;
+}
+
+// ================= ATUALIZAÇÃO =================
+function update(){
+    leftPaddle._move();
+    rightPaddle._autoMove();
+
+    ball._move();
+    ball._checkWallCollision();
+    ball._checkPaddleCollision();
+    ball._checkScore();
+}
+
+// ================= DESENHO =================
+function draw() {
+    field.draw();
+    line.draw();
+    leftPaddle.draw();
+    rightPaddle.draw();
+    score.draw();
+    ball.draw();
+}
+
+// ================= LOOP =================
+function gameLoop(){
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+setup();
+gameLoop();
+
+</script>
 </body>
 </html>
